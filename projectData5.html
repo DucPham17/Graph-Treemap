@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body{
+                text-align: center;
+                background-color: aquamarine;
+            }
+            
+        </style>
+        <script src="https://d3js.org/d3.v5.js"></script>
+    </head>
+    <body>
+        <h1 id="title">Movies</h1>
+        <h2 id="description">Best Movies By Value</h2>
+        <script>
+            const w = 1230;
+            const h = 500;
+            const pad = 30;
+
+            
+            const svg = d3.select("body")
+                        .append("svg")
+                        .attr("width",w)
+                        .attr("height",h)
+                        
+            const legend = d3.select("body")
+                            .append("svg")
+                            .attr("width",w)
+                            .attr("height", 50)
+                            .attr("id","legend")
+            var div = d3.select("body").append("div").
+            attr("class", "tooltip").
+            attr("id", "tooltip").
+            style("opacity", 0);
+            
+            
+            fetch("https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/movie-data.json")
+            .then(response => response.json())
+            .then(data => {
+                const moviesData = data.children;
+                const moviesAction = moviesData[0].children;
+                const moviesDrama = moviesData[1].children;
+                const moviesAdventure = moviesData[2].children;
+                const moviesFamily = moviesData[3].children;
+                const moviesAnimation = moviesData[4].children;
+                const moviesComedy = moviesData[5].children;
+                const moviesBiography = moviesData[6].children;
+                const totalMovies = moviesAction.concat(moviesDrama).concat(moviesAdventure).concat(moviesFamily).concat(moviesFamily).concat(moviesAnimation).concat(moviesComedy).concat(moviesBiography);
+
+                let moviesActionValue = moviesAction.map((item) =>{
+                    return parseInt(item.value);
+                });
+                let moviesDramaValue = moviesDrama.map((item) =>{
+                    return parseInt(item.value);
+                });
+                let moviesAdventureValue = moviesAdventure.map((item) =>{
+                    return parseInt(item.value);
+                });
+                let moviesFamilyValue = moviesFamily.map((item) =>{
+                    return parseInt(item.value);
+                });
+                let moviesAnimationValue = moviesAnimation.map((item) =>{
+                    return parseInt(item.value);
+                });
+                let moviesComedyValue = moviesComedy.map((item) =>{
+                    return parseInt(item.value);
+                });
+                let moviesBiographyValue = moviesBiography.map((item) =>{
+                    return parseInt(item.value);
+                });
+                
+
+                function value(typeFilm){
+                    let a = 0;
+                    for(let i = 0; i < typeFilm.length;i++){
+                        a += typeFilm[i];       
+                    }
+                    return a;
+                }
+                const total = value(moviesActionValue)+value(moviesDramaValue)+value(moviesAdventureValue)+value(moviesAnimationValue)+value(moviesComedyValue)+value(moviesBiographyValue)
+                
+                const colorTemp = [{color : "red", type : "Action"},
+                                    {color: "blue", type : "Drama"},
+                                    {color: "violet", type :"Adventure"},
+                                    {color: "yellow",type : "Family"},
+                                    {color: "purple", type: "Animation"},
+                                    {color: "green", type: "Comedy"},
+                                    {color: "rgb(242, 127, 121)", type: "Biography"}]
+                legend.selectAll("rect")
+                    .data(colorTemp)
+                    .enter()
+                    .append("rect")
+                    .attr("class","legend-item")
+                    .attr("x",(d,i) => i*80)
+                    .attr('y',30)
+                    .attr("width",30)
+                    .attr("height",10)
+                    .style("fill", (d) => d.color)
+                
+                legend.selectAll("text")
+                    .data(colorTemp)
+                    .enter()
+                    .append("text")
+                    .attr("x",(d,i) => i*80)
+                    .attr("y", 20)
+                    .text(d => d.type)
+
+
+        const xPositionAction = [0];
+        
+        for(let i = 0 ; i < moviesActionValue.length-1;i++){
+            xPositionAction.push(moviesActionValue[i]/value(moviesActionValue)*1059+xPositionAction[i])
+        }
+
+        const xPositionOther = [];
+        const totalPosition = xPositionOther.concat(xPositionAction);
+        totalPosition.push(0);
+        for(let i = xPositionAction.length; i < totalMovies.length - 1;i++){
+            totalPosition.push(parseInt(totalMovies[i].value)/(total-value(moviesActionValue))*1000+totalPosition[i])
+        }
+        
+        console.log(totalPosition)
+        svg.selectAll("rect")
+                .data(totalMovies)
+                .enter()
+                .append("rect")
+                .attr("x", (d,i) =>{
+                    return totalPosition[i]
+                })
+                .attr("y",(d,i) => {
+                    if(d.category == "Action"){
+                        return pad;
+                    }
+                    else return pad+250;
+                })
+                .attr("height",250)
+                .attr("width",(d,i) => {
+                    if(d.category == "Action"){
+                        return parseInt(d.value)/value(moviesActionValue)*1000
+                    }
+
+                    else{
+                        return parseInt(d.value)/(total-value(moviesActionValue))*1000
+                    }
+                })
+                .style("fill",(d,i) => {
+                    if(d.category == "Action"){
+                        return colorTemp[0].color
+                    }
+                    else if(d.category == "Drama"){
+                        return colorTemp[1].color
+                    }
+                    else if(d.category == "Adventure"){
+                        return colorTemp[2].color
+                    }
+                    else if(d.category == "Animation"){
+                        return colorTemp[4].color
+                    }
+                    else if(d.category == "Comedy"){
+                        return colorTemp[5].color
+                    }
+                    else if(d.category == "Family"){
+                        return colorTemp[3].color
+                    }
+                    else if(d.category == "Biography"){
+                        return colorTemp[6].color
+                    }
+                })
+                .attr("class","tile")
+                .attr("data-name",(d,i) => {
+                    
+                    return d.name})
+                .attr("data-category",(d,i) => d.category)
+                .attr("data-value",(d,i) => d.value)
+                .on("mouseover", d => {
+                        
+                        div.style("opacity", .9);
+                        div.attr("data-value", d.value)
+                        div.html("Name: " +d.name+", Category: "+d.category+", Value: "+d.value);
+                        
+                })
+                    .on("mouseout", function (d) {
+                    div.style("opacity", 0);
+                     })
+            
+            
+            
+            })     
+        
+        </script>
+        <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+        <p>Created by <a href="https://www.linkedin.com/in/duc-pham-068092178/">Duc Pham</a></p>
+    </body>
+</html>
